@@ -14,11 +14,11 @@ import lidar_platform.classification.feature_selection
 import cv2
 
 #First compute features on your training point cloud using the command line
-parameters="D:/nz_data/05_02_25/4cats_classifier.txt"
-pc1="D:/nz_data/05_02_25/sitescombined2009_allsfs.sbf"
-core="D:/nz_data/05_02_25/sitescombined2009_cpallsfs.sbf"
-training="D:/nz_data/05_02_25/sitescombined_training.sbf"
-testing="D:/nz_data/05_02_25/sitescombined_testing.sbf"
+parameters="F:/nz_data/05_02_25/messing_with_python/Rangi2009_3dmasc_PC.txt"
+pc1="F:/nz_data/05_02_25/messing_with_python/sitescombined_2009_clone.bin"
+core="F:/nz_data/05_02_25/messing_with_python/sitescombined_subsampled.bin"
+training="F:/nz_data/05_02_25/messing_with_python/sitescombined.training.clone.bin"
+testing="F:/nz_data/05_02_25/messing_with_python/sitescombined.testing.clone.bin"
 
 clouds = (pc1, core)  # pc1, pc2 and core are full paths to clouds
 core_ft = cc.q3dmasc(clouds, parameters, only_features=True, verbose=True, fmt='sbf')  #creating features on the core points
