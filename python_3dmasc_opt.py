@@ -94,3 +94,10 @@ eval_sc=0.4 #needs to be one of the scales of analysis
 #search_set = np.array(np.where(scales == eval_sc)[0].tolist())
 dictopt_param=lidar_platform.classification.feature_selection.rf_ft_selection(train_wft,
                   test_wft, n_scales, n_features, eval_sc, threshold=0.85, step=1)
+
+# dictopt_getn=lidar_platform.classification.feature_selection.get_n_optimal_sc_ft(train_wft,
+#                   test_wft, n_scales, n_features, eval_sc, threshold=0.85)
+
+wait=20 
+threshold=0.02
+best_ft=get_best_rf_select_iter(dictopt_param, train_wft, test_wft, wait, threshold )
