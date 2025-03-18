@@ -100,4 +100,4 @@ dictopt_param=lidar_platform.classification.feature_selection.rf_ft_selection(tr
 
 wait=20 
 threshold=0.02
-best_ft=get_best_rf_select_iter(dictopt_param, train_wft, test_wft, wait, threshold )
+best_ft=lidar_platform.classification.feature_selection.get_best_rf_select_iter(dictopt_param, train_wft, test_wft, wait, threshold )
