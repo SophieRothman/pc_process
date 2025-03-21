@@ -75,7 +75,7 @@ parsed=filelist_final[0].split('.')
 merged_name_out=parsed[0]+'_MERGED.bin'
 print('*********merge done')
 # SUBSAMPLE TO  2 mm
-cc.ss(merged_name_out, method='SPATIAL', parameter=0.002,  fmt='BIN', verbose=True, cc_exe='C:\\Program Files\\CloudCompare\\CloudCompare.exe') #
+cc.ss(merged_name_out, method='SPATIAL', silent=False, parameter=0.002,  fmt='BIN', verbose=True, cc_exe='C:\\Program Files\\CloudCompare\\CloudCompare.exe') #
 parsed=merged_name_out.split('.')
 old_name=parsed[0]+'_SPATIAL_SUBSAMPLED.bin'
 new_name='F:/nz_data/05_03_25_faro/Mangarere_FARO_20170314_ALL_STATIONS_2mm.bin'
