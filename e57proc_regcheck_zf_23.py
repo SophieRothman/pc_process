@@ -14,14 +14,13 @@ import lidar_platform.classification.feature_selection
 import cv2
 import matplotlib.pyplot as plt
 import os
-import matplotlib
 
-txtfile='F:/nz_data/faro/2014/testnorm/faro_2014_list.txt'
-newname1='F:/nz_data/faro/2014/testnorm/Mangarere_FARO_20150324_ALL_STATIONS_2mm.bin' 
-newname2='F:/nz_data/faro/2014/testnorm/Mangarere_FARO_20150324_ALL_STATIONS_1cm.bin'
-newname3='F:/nz_data/faro/2014/testnorm/Mangarere_FARO_20150324_ALL_STATIONS_20cm.bin'
+txtfile='F:/nz_data/zf/zf_2023_list.txt'
+newname1='F:/nz_data/zf/Mangarere_ZF_20230222_ALL_STATIONS_2mm.bin' 
+newname2='F:/nz_data/zf/Mangarere_ZF_20230222_ALL_STATIONS_1cm.bin' 
+newname3='F:/nz_data/zf/Mangarere_ZF_20230222_ALL_STATIONS_20cm.bin' 
 
-prefix='F:/nz_data/faro/2014/testnorm/'
+prefix='F:/nz_data/zf/'
 #%%
 filelist=np.array([])
 filelist_final=np.array([])
@@ -55,10 +54,8 @@ for i in range(0, len(filelist)):
     # # create a scan number
     
     # # create station scalar field populated with the station number 
-    if i<5:
-        cc.sf_add_const(merged_name2, ('STATION', (i)),  verbose=True, fmt='bin' )
-    if i>=5:
-       cc.sf_add_const(merged_name2, ('STATION', (i+1)),  verbose=True, fmt='bin' )
+ 
+    cc.sf_add_const(merged_name2, ('STATION', (i+2)),  verbose=True, fmt='bin' )
     
 
     # #invert normals
@@ -98,9 +95,9 @@ os.rename(old_name, newname3)
 
 #%% 
 txtfile='F:/nz_data/faro/2014/faro_2014_list.txt'
-params='F:/nz_data/m3c2_paramsv7.txt'
+params='F:/nz_data/m3c2_params2.txt'
 
-cliff_cp='F:/nz_data/ws_pcs/Mangarere_2014000_20cm_5mn_clasclif_uc75.bin'
+cliff_cp='F:/nz_data/faro/2014/Mangarere_FARO_20140220_ALL_STATIONS_20cm.bin'
 filelist=np.array([])
 with open(txtfile) as files:
     for item in files:
@@ -127,8 +124,6 @@ for i in np.arange(0, len(filelist)):
     count=count+len(filelist)-i-1
 # %%
 resultsarray=np.empty((int(numcom), 3))
-resultsnames=[]
-
 
 for i in range(0, int(numcom)): #finally this will read 0, numcom
     file1=filelist[int(combinations[i, 0])]
@@ -138,19 +133,14 @@ for i in range(0, int(numcom)): #finally this will read 0, numcom
     #results=cc.icpm3c2(filelist[int(combinations[i, 0])], filelist[int(combinations[i, 1])], params, core=cliff_cp, silent=False, fmt='BIN', verbose=True)
     pc_m3c2=sbf.read(results)
     parsed=results.split('.')
-    file2=filelist[int(combinations[i, 1])].split('.')[0]
+    file2=filelist[int(combinations[i, 1])].split('.')
     file2=file2.split('_')[-1]
-    newname3=parsed[0]+'_'+file2+'.sbf'
-    newname4=parsed[0]+'_'+file2+'.sbf.data'
-    oldname1=results+'.data'
+    old_name=parsed[0]+'_'+file2+'.bin'
     os.rename(results, newname3)
-    os.rename(oldname1, newname4)
-    resultsnames.append(newname3)
-    #pc_m3c2=sbf.read(resultsnames[i])
     xyz=pc_m3c2.xyz
     nn=pc_m3c2.sf_names
     sfs=pc_m3c2.sf
-    mask=sfs[:, 5]<0.01
+    mask=sfs[:, 5]<0.04
     sfnames=pc_m3c2.sf_names
     #avg m3c2distance
     #m3c2i=np.where(nn='M3C2 distance')
@@ -158,24 +148,22 @@ for i in range(0, int(numcom)): #finally this will read 0, numcom
     #stdev of m3c2 distance
     #isd=np.where(nn='significant change')
     resultsarray[i, 1]=np.nanstd(sfs[mask, 6])
-    #fraction overlap
-    resultsarray[i, 2]=len(sfs[mask, 5])/len(sfs[:, 6])
-    
+    #fraction significant change
+    #resultsarray[i, 2]=len(sfs[sfs[:, 4]==True, 4])/(len(sfs[:, 6])-len(sfs[np.isnan(sfs[:, 6]), 6]))
     
 # %%
 #now average for each scan
-results_perscan=np.empty((len(filelist), 4))
+results_perscan=np.empty((len(filelist), 3))
 for i in range(0, len(filelist)):
     index_col1=np.where(combinations[:, 0]==i)[0]
     index_col2=np.where(combinations[:, 1]==i)[0]
     for j in range(0, len(index_col2)):
         index_col1=np.append(index_col1, index_col2[j], axis=None )
     #for 
-    results_perscan[i, 3]=np.nanmean(resultsarray[index_col1, 2])
-    weights=resultsarray[index_col1, 2]/sum(resultsarray[index_col1, 2])
-    results_perscan[i, 0]=np.nanmean((resultsarray[index_col1, 0])*weights)
-    results_perscan[i, 1]=np.nanmean(np.absolute(resultsarray[index_col1, 0]*weights))
-    results_perscan[i, 2]=np.nanmean(resultsarray[index_col1, 1]*weights)
+    results_perscan[i, 0]=np.nanmean((resultsarray[index_col1, 0]))
+    results_perscan[i, 1]=np.nanmean(np.absolute(resultsarray[index_col1, 0]))
+    results_perscan[i, 2]=np.nanmean(resultsarray[index_col1, 1])
+   # results_perscan[i, 3]=np.nanmean(resultsarray[index_col1, 2])
 
 fig, (ax1, ax2, ax3)=plt.subplots(3, 1, figsize=(12, 10), layout='tight')
 ax1.bar([0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12], results_perscan[:, 0])
@@ -200,33 +188,3 @@ figname=parsed[0]+ '_regresults.png'
 fig.savefig(figname)
 arrayname=parsed[0]+'_resultsarray'
 np.save(arrayname, resultsarray)
-resultsnames=np.array(resultsnames)
-np.save(arrayname, resultsnames)
-
-
-fig, (ax1)=plt.subplots()
-pos=ax1.scatter(combinations[:, 0], combinations[:, 1], marker='o', s=50, c=resultsarray[:, 2], cmap=plt.cm.coolwarm, norm=matplotlib.colors.LogNorm())
-cbar=fig.colorbar(pos, ax=ax1)
-ax1.set_xlabel('Scan 1')
-ax1.set_ylabel('Scan 2')
-ax1.set_title('note that there is no scan 5 so 5-11 are known as scans 6-12')
-cbar.set_label('Fraction of core points for which the scans overlap')
-#%%
-m3c2_list=np.array([])
-txt='F:/nz_data/faro/2014/m3c2list.txt'
-with open(txt) as files:
-    for item in files:
-        #print(item)
-        item=item.rstrip('\n')
-       # parsed=item.split('.')
-        item='F:/nz_data/faro/2014/'+item
-        #outitem='F:/nz_data/05_03_25_faro/inner_outer/'+parsed[0]+'out.'+parsed[1]
-
-        m3c2_list=np.append(m3c2_list, item, axis=None)
-
-
-for i in range(0, len(m3c2_list)):
-    results=sbf.read(m3c2_list[i])
-    xyz=results.xyz
-    nn=results.sf_names
-    sfs=results.sf

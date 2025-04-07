@@ -57,13 +57,13 @@ dictopt_param=lidar_platform.classification.feature_selection.rf_ft_selection(tr
 
 
 
-parameters="F:/nz_data/05_02_25/Rangi2009_3dmasc_PCv2.txt"
+parameters="F:/nz_data/05_02_25/Rangi2009_3dmasc_PCv3.txt"
 parameters_train="F:/nz_data/05_02_25/Rangi2009_3dmasc_PC_train.txt"
 parameters_test="F:/nz_data/05_02_25/Rangi2009_3dmasc_PC_test.txt"
 
 pc1="F:/nz_data/05_02_25/sitescombined_2009_clone.bin"
 core="F:/nz_data/05_02_25/sitescombined_subsampled.bin"
-training="F:/nz_data/05_02_25/sitescombined2009.ta_rl2.bin"
+training="F:/nz_data/05_03_25_faro/test/sitescombined2009.ta_rlv2.bin"
 testing="F:/nz_data/05_02_25/sitescombined2009.tes_rl.bin"
 ctx="F:/nz_data/05_02_25/riversurface.bin"
 
@@ -84,7 +84,7 @@ test_wft=classification.cc_3dmasc.load_sbf_features("F:/nz_data/05_02_25/sitesco
                                                        parameters_test,  labels=True, coords=True)
 #test_wft['labels']=np.array(['Cliff', 'Bedrock', 'Debris/Cobbles', 'Vegetation', 'Water'])
 
-n_scales=4
+n_scales=6
 n_features=50
 eval_sc=0.4 #needs to be one of the scales of analysis
 
@@ -98,8 +98,8 @@ dictopt_param=lidar_platform.classification.feature_selection.rf_ft_selection(tr
 # dictopt_getn=lidar_platform.classification.feature_selection.get_n_optimal_sc_ft(train_wft,
 #                   test_wft, n_scales, n_features, eval_sc, threshold=0.85)
 
-wait=2
-threshold=0.02
+wait=1
+threshold=0.01
 best_ft=lidar_platform.classification.feature_selection.get_best_rf_select_iter(dictopt_param, train_wft, test_wft, wait, threshold )
 #cc_3dmasc.get_shap_expl()
 #best_ft.save('F:/nz_data/05_02_25/python_classifier.yaml')
