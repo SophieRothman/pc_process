@@ -126,8 +126,20 @@ for i in np.arange(0, len(filelist)):
     combinations[count:(count+len(filelist)-i-1), :]=col1
     count=count+len(filelist)-i-1
 # %%
+pc_cc=cc.to_sbf(cc,  silent=True, debug=False)
+
+results=cc.m3c2(filelist[int(combinations[0, 0])], filelist[int(combinations[0, 1])], params, core=cliff_cp, fmt='SBF',
+             silent=True, debug=False)
+pc_m3c2=sbf.read(results)
+
+xyz=pc_m3c2.xyz
+len_cloud=len(xyz[:, 1])
+nn=pc_m3c2.sf_names
+sfs=pc_m3c2.sf
 resultsarray=np.empty((int(numcom), 3))
 resultsnames=[]
+results_m3c2=np.empty((len_cloud, int(numcom)))
+results_dist_unc=np.empty((len_cloud, int(numcom)))
 
 
 for i in range(0, int(numcom)): #finally this will read 0, numcom
@@ -137,20 +149,25 @@ for i in range(0, int(numcom)): #finally this will read 0, numcom
              silent=True, debug=False)
     #results=cc.icpm3c2(filelist[int(combinations[i, 0])], filelist[int(combinations[i, 1])], params, core=cliff_cp, silent=False, fmt='BIN', verbose=True)
     pc_m3c2=sbf.read(results)
-    parsed=results.split('.')
-    file2=filelist[int(combinations[i, 1])].split('.')[0]
-    file2=file2.split('_')[-1]
-    newname3=parsed[0]+'_'+file2+'.sbf'
-    newname4=parsed[0]+'_'+file2+'.sbf.data'
-    oldname1=results+'.data'
-    os.rename(results, newname3)
-    os.rename(oldname1, newname4)
-    resultsnames.append(newname3)
+    # parsed=results.split('.')
+    # file2=filelist[int(combinations[i, 1])].split('.')[0]
+    # file2=file2.split('_')[-1]
+    # newname3=parsed[0]+'_'+file2+'.sbf'
+    # newname4=parsed[0]+'_'+file2+'.sbf.data'
+    # oldname1=results+'.data'
+    # os.rename(results, newname3)
+    # os.rename(oldname1, newname4)
+    # resultsnames.append(newname3)
     #pc_m3c2=sbf.read(resultsnames[i])
-    xyz=pc_m3c2.xyz
+    
+    
+    #xyz=pc_m3c2.xyz
     nn=pc_m3c2.sf_names
     sfs=pc_m3c2.sf
-    mask=sfs[:, 5]<0.01
+    results_m3c2[:, i]=sfs[:, 6]
+    results_dist_unc[:, i]=sfs[:, 5]
+
+    mask=~np.isnan(sfs[:, 5])
     sfnames=pc_m3c2.sf_names
     #avg m3c2distance
     #m3c2i=np.where(nn='M3C2 distance')
@@ -161,22 +178,71 @@ for i in range(0, int(numcom)): #finally this will read 0, numcom
     #fraction overlap
     resultsarray[i, 2]=len(sfs[mask, 5])/len(sfs[:, 6])
     
-    
+# parsed=txtfile.split('_l')
+# arrayname=parsed[0]+'_m3c2_array'    
+# np.save( arrayname, results_m3c2)   
+# arrayname=parsed[0]+'_dist_unc_array'    
+# np.save( arrayname, results_dist_unc) 
 # %%
+
 #now average for each scan
+m3c2dict={}
+dist_uncdict={}
 results_perscan=np.empty((len(filelist), 4))
+weights_perscan=np.empty((len(filelist), len(filelist)))
+a_scan=[]
+a_weight=[]
+a_names=[]
 for i in range(0, len(filelist)):
+    results=np.empty((len_cloud, len(filelist)+5))
+    results[:]=np.nan
+    results[:, 0:3]=xyz
+    length=np.empty((len(filelist)))
+    length[:]=np.nan
     index_col1=np.where(combinations[:, 0]==i)[0]
     index_col2=np.where(combinations[:, 1]==i)[0]
-    for j in range(0, len(index_col2)):
-        index_col1=np.append(index_col1, index_col2[j], axis=None )
-    #for 
-    results_perscan[i, 3]=np.nanmean(resultsarray[index_col1, 2])
-    weights=resultsarray[index_col1, 2]/sum(resultsarray[index_col1, 2])
-    results_perscan[i, 0]=np.nanmean((resultsarray[index_col1, 0])*weights)
-    results_perscan[i, 1]=np.nanmean(np.absolute(resultsarray[index_col1, 0]*weights))
-    results_perscan[i, 2]=np.nanmean(resultsarray[index_col1, 1]*weights)
+    
+    for j in range(0, len(index_col1)):
+        iscan=int(combinations[index_col1[j], 1])+3 #finds the scan number of the comparison scan to put it in the proper order
+        iscan
+        results[ :, iscan]=results_m3c2[:,index_col1[j] ]
+        #length[j]=np.count_nonzero(np.isnan(results[ :, j]))
+        length[iscan-3]=len(results[~np.isnan(results[ :, iscan]), j])/len_cloud
 
+    for k in range(0, len(index_col2)):
+        iscan=int(combinations[index_col2[k], 0])+3
+
+#        index_col1=np.append(index_col1, index_col2[j], axis=None )
+        results[ :, iscan]=-results_m3c2[:,index_col2[k] ] #MAke sure to make those from the second column negative because the position of the cloud hs changed
+        length[iscan-3]=len(results[~np.isnan(results[ :, iscan]),iscan])/len_cloud
+
+    #for 
+    #results_perscan[i, 3]=np.nanmean(results)
+    for l in range(0, len_cloud):
+        if np.count_nonzero(~np.isnan(results[l, 3:(len(filelist)+2)]))>0:
+            results[l, -1]=np.nanmean(results[l, 3:(len(filelist)+2)])
+            results[l, -2]=np.count_nonzero(~np.isnan(results[l, 3:(len(filelist)+2)]))+1
+            
+    weights_perscan[:, i]=np.copy(length)
+    results_perscan[i, 0]=np.nanmean(np.copy(results))
+    results_perscan[i, 1]=np.nanmean(np.absolute(np.copy(results)))
+
+    #results_perscan[i, 2]=np.nanmean(np.absolute(resultsarray[index_col1, 0]*weights))
+    results_perscan[i, 2]=np.nanstd(np.copy(results))
+    
+    a_scan.append(np.copy(results))
+    #a_weight.append(np.copy(weights_perscan))
+    if i<5:
+        arrayname=parsed[0]+'_scan_' + str(i)+'_results'
+    if i>4:    
+        arrayname=parsed[0]+'_scan_' + str(i+1)+'_results'
+    arrayname=arrayname+'.txt'
+    np.savetxt(arrayname, np.copy(results)) #, header='x y z 1 2 3 4 6 7 8 9 10 11 12 #scans avgm3c2'
+    a_names.append(np.copy(arrayname))
+
+# %%
+import matplotlib
+r=cc.to_sbf(a_names[-1])
 fig, (ax1, ax2, ax3)=plt.subplots(3, 1, figsize=(12, 10), layout='tight')
 ax1.bar([0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12], results_perscan[:, 0])
 ax2.bar([0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12], results_perscan[:, 1])

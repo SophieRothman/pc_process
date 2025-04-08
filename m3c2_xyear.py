@@ -24,16 +24,16 @@ params='F:/nz_data/m3c2_params2.txt'
 
 
 
-pc2014='F:/nz_data/m3c2test/Mangarere_2014000_1cm.bin'
-pc2015='F:/nz_data/faro/2015/Mangarere_FARO_20150324_ALL_STATIONS_1cm.bin'
-pc2017='F:/nz_data/m3c2test/Mangarere_2017039_1cm.bin'
-cp='F:/nz_data/m3c2test/Mangarere_2014000_20cm.bin'
+# pc2014='F:/nz_data/faro/2014/Mangarere_2014000_1cm.bin'
+# pc2015='F:/nz_data/faro/2015/Mangarere_FARO_20150324_ALL_STATIONS_1cm.bin'
+# pc2017='F:/nz_data/05_03_25_faro/Mangarere_FARO_20170314_ALL_STATIONS_1cm.bin'
+# cp='F:/nz_data/m3c2test/Mangarere_2014000_20cm.bin'
 # resultsarray=np.empty((int(numcom), 3))
 
 pc1=cc.to_sbf(pc2014, silent=True, debug=False)
     
-results=cc.m3c2(pc1, pc2017, params, core=cp, fmt='SBF',
-         silent=True, debug=True)
+results=cc.m3c2(pc1, pc2017, params, core=cp, fmt='BIN',
+         silent=True, debug=True)# cc='F:\\cc_vspecial\\CloudCompare\\CloudCompare.exe')
 
 # def m3c2(pc1, pc2, params, core=None, fmt='SBF',
 #          silent=True,  debug=False, global_shift='AUTO', cc=cc_exe):
@@ -67,7 +67,7 @@ output_3dmasc=[]
 
 # ef q3dmasc(clouds, training_file, only_features=False, keep_attributes=False,
 #             silent=True, verbose=False, global_shift='AUTO', cc_exe=cc_exe, fmt='sbf'):
-for i in range(1, 2): #len(pc_full)):
+for i in range(1, 4): #len(pc_full)):
     clouds=(ws_pcs[i], pc_full[i], pc_cp[i])
     out = cc.q3dmasc(clouds, classifier, keep_attributes=True, verbose=True)
     output_3dmasc.append(out)
