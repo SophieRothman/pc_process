@@ -92,17 +92,24 @@ eval_sc=0.4 #needs to be one of the scales of analysis
 #scales, names, ds_names = lidar_platform.classification.feature_selection.get_scales_feats(trads)
 
 #search_set = np.array(np.where(scales == eval_sc)[0].tolist())
-dictopt_param=lidar_platform.classification.feature_selection.rf_ft_selection(train_wft,
-                  test_wft, n_scales, n_features, eval_sc, threshold=0.85, step=1)
+dictopt_param=classification.feature_selection.rf_ft_selection(train_wft,
+                  test_wft, n_scales, n_features, eval_sc, threshold=0.8, step=1)
 
 # dictopt_getn=lidar_platform.classification.feature_selection.get_n_optimal_sc_ft(train_wft,
-#                   test_wft, n_scales, n_features, eval_sc, threshold=0.85)
+#                   test_wft, n_scales, n_features, eval_sc, threshold=0.85)    def get_best_rf_select_iter(dictio_rf_select, trads, testds, wait, threshold):
 
-wait=1
-threshold=0.01
-best_ft=lidar_platform.classification.feature_selection.get_best_rf_select_iter(dictopt_param, train_wft, test_wft, wait, threshold )
+wait=2
+threshold=0.02
+[dictio_results, classifier, final_idx]=lidar_platform.classification.feature_selection.get_best_rf_select_iter(dictopt_param, train_wft, test_wft, wait, threshold) #[dictio_results, classifier, final_idx]
 #cc_3dmasc.get_shap_expl()
 #best_ft.save('F:/nz_data/05_02_25/python_classifier.yaml')
+
+#Run the following (assuming your training data, loaded with load_sbf_features, is named trads):
+optim_trads = {'features': train_wft['features'][:, final_idx], 'labels': train_wft['labels']}
+opencv_rf = classification.cc_3dmasc.train(optim_trads, model=1)
+
+#And finally:
+opencv_rf.save('F:/nz_data/05_02_25/python_classifier_opt.yaml')
 # %% trying to classify it
 
 cp='F:/nz_data/05_03_25_faro/test/slice20cm.bin'
