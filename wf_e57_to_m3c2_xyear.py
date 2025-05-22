@@ -270,22 +270,11 @@ np.save('F:/nz_data/m3c2_resultnames', m3c2_files)
 np.save('F:/nz_data/m3c2_newcpnames', new_cp)
 #%% analyze results
 #box1
-xs=[]
-ys=[]
-zs=[]
-dip=[]
-class_from_2009=[]
-erosion=[]
-xs=np.array(xs)
-ys=np.array(ys)
-zs=np.array(zs)
-dip=np.array(dip)
-class_from_2009=np.array(class_from_2009)
-erosion=np.array(erosion)
+
 m3files=np.load('F:/nz_data/m3c2_resultnames.npy')
 for i in range(0, len(m3files)):
     parsed=m3files[i].split('.')
-    parsed=parsed[0]+'_in.bin'
+    parsed=parsed[0]+'.bin'
     sbf_clas=cc.to_sbf(parsed) #change this input to change which files are analyzed
     cld=sbf.read(sbf_clas)
     cld_sf=cld.sf
@@ -323,13 +312,35 @@ for i in range(0, len(m3files)):
 
 np.savez('F:/nz_data/m3c2_resultarrays.npz', xs=xs, ys=ys, zs=zs, dip=dip, class_from_2009=class_from_2009, erosion=erosion)
 #%% if we want to restrict to only a box
-x1=777
-x2=990
-y1=625
-y2=762
-for i in range(0, len(m3files)):
-    mask=np.logical_and(np.logical_and(xs[:, i]>x1, xs[:, i]<x2) , np.logical_and(ys[:, i]>y1, ys[:, i]<y2))
-    erosion[mask==False, :]=np.nan
+x_forl=np.zeros((11, 2))
+x_forl[0, :]=[774.4, 951.8]
+x_forl[1, :]=[ 768, 964.6]
+
+x_forl[0, :]=[ 926.3, 1039.39]
+x_forl[1, :]=[953.49, 1054.92]
+
+y_forl=np.zeros((11, 2))
+
+y_forl[0, :]=[694.9, 797.2]
+y_forl[1, :]=[664.2, 780.1]
+
+y_forl[0, :]=[534.692, 640.173]
+y_forl[1, :]=[517.8, 623.4]
+
+slopel=np.empty((len(y_forl[:, 0])))*np.nan
+inter=np.empty((len(y_forl[:, 0])))*np.nan
+for i in range(0, len(x_forl[:, 0])):
+        slopel[i]=(y_forl[i, 1]-y_forl[i,0])/(x_forl[i,1]-x_forl[i,0])
+        inter[i]=(-slopel[i]*x_forl[i,0])+y_forl[i,0]
+
+#for i in range(0, len(m3files)):
+maskline1=ys<(slopel[0]*xs +inter[0])
+maskline2=ys>(slopel[1]*xs +inter[1])
+mask=np.logical_and(maskline1, maskline2)
+maskelev=zs<286.5
+erosion[np.logical_or(mask==False, maskelev==False)]=np.nan
+    
+sbf.write('F:/nz_data/boxtest.sbf', cld_xyz, erosion)
 #%% now produce figures of these results
 #first just histograms of erosion rates
 legends=['2009_02-2010_02', '2010_02-2010_12', '2010_12-2011_02', '2011_02-2011_12', '2011_12-2012_02']
@@ -422,6 +433,289 @@ ax5.set_title(legends[4])
 ax5.axhline(0)
 #ax5.set_ylim([-1, 0.4])
 
+
+#%% analyze results- both in and out at the same time
+#box1
+#for the 'in' direction
+m3files=np.load('F:/nz_data/m3c2_resultnames.npy')
+for i in range(0, len(m3files)):
+    parsed=m3files[i].split('.')
+    parsed=parsed[0]+'_in.bin'
+    sbf_clas=cc.to_sbf(parsed) #change this input to change which files are analyzed
+    cld=sbf.read(sbf_clas)
+    cld_sf=cld.sf
+    cld_n=cld.sf_names
+    cld_xyz=cld.xyz    
+    im3c2=cld_n.index('M3C2 distance')
+    im3c2_unc=cld_n.index('distance uncertainty')
+    im3c2_sig=cld_n.index('significant change')
+
+    if i>0:
+        idip6=cld_n.index('Dip_PC1@0.4',) #MADE A MISTAKE HERE
+    iclass=cld_n.index('Classification')
+
+    if i==0:
+        xs_in=np.zeros((len(cld_sf[:, 0]), len(m3files)))*np.nan
+        ys_in=np.zeros((len(cld_sf[:, 0]), len(m3files)))*np.nan
+        zs_in=np.zeros((len(cld_sf[:, 0]), len(m3files)))*np.nan
+        dip_in=np.zeros((len(cld_sf[:, 0]), len(m3files)))*np.nan
+        class_from_2009_in=np.zeros((len(cld_sf[:, 0]), ))*np.nan
+        erosion_in=np.zeros((len(cld_sf[:, 0]), len(m3files)))*np.nan
+        erosion_unc_in=np.zeros((len(cld_sf[:, 0]), len(m3files)))*np.nan
+        erosion_sig_in=np.zeros((len(cld_sf[:, 0]), len(m3files)))*np.nan
+
+
+        class_from_2009_in[:]=cld_sf[:, iclass]
+        idip6=cld_n.index('Dip_PC1@0.6',) #WHOOPS I MESSED UP THE CLASSIDIER FOR THE FIRST ROUND IS NOT THE SAME AS FOR ALL THE OTHERS NEED TO FIX THIS
+    print(i)
+    xs_in[:, i]=cld_xyz[:, 0]
+    ys_in[:, i]=cld_xyz[:, 1]
+    zs_in[:, i]=cld_xyz[:, 2]
+    dip_in[:, i]=cld_sf[:, idip6]
+    erosion_in[:, i]=cld_sf[:, im3c2]  
+    erosion_unc_in[:, i]=cld_sf[:, im3c2_unc]  
+    erosion_sig_in[:, i]=cld_sf[:, im3c2_sig]  
+
+np.savez('F:/nz_data/m3c2_resultarrays_in.npz', xs_in=xs_in, ys_in=ys_in, zs_in=zs_in, dip_in=dip_in, class_from_2009_in=class_from_2009_in, erosion_in=erosion_in)
+
+#for the 'out' direction
+m3files=np.load('F:/nz_data/m3c2_resultnames.npy')
+for i in range(0, len(m3files)):
+    parsed=m3files[i].split('.')
+    parsed=parsed[0]+'_out.bin'
+    sbf_clas=cc.to_sbf(parsed) #change this input to change which files are analyzed
+    cld=sbf.read(sbf_clas)
+    cld_sf=cld.sf
+    cld_n=cld.sf_names
+    cld_xyz=cld.xyz    
+    im3c2=cld_n.index('M3C2 distance')
+    im3c2_unc=cld_n.index('distance uncertainty')
+    im3c2_sig=cld_n.index('significant change')
+
+    if i>0:
+        idip6=cld_n.index('Dip_PC1@0.4',) #MADE A MISTAKE HERE
+    iclass=cld_n.index('Classification')
+
+    if i==0:
+        xs_out=np.zeros((len(cld_sf[:, 0]), len(m3files)))*np.nan
+        ys_out=np.zeros((len(cld_sf[:, 0]), len(m3files)))*np.nan
+        zs_out=np.zeros((len(cld_sf[:, 0]), len(m3files)))*np.nan
+        dip_out=np.zeros((len(cld_sf[:, 0]), len(m3files)))*np.nan
+        class_from_2009_out=np.zeros((len(cld_sf[:, 0]), ))*np.nan
+        erosion_out=np.zeros((len(cld_sf[:, 0]), len(m3files)))*np.nan
+        erosion_unc_out=np.zeros((len(cld_sf[:, 0]), len(m3files)))*np.nan
+        erosion_sig_out=np.zeros((len(cld_sf[:, 0]), len(m3files)))*np.nan
+
+
+        class_from_2009_out[:]=cld_sf[:, iclass]
+        idip6=cld_n.index('Dip_PC1@0.6',) #WHOOPS I MESSED UP THE CLASSIDIER FOR THE FIRST ROUND IS NOT THE SAME AS FOR ALL THE OTHERS NEED TO FIX THIS
+    print(i)
+    xs_out[:, i]=cld_xyz[:, 0]
+    ys_out[:, i]=cld_xyz[:, 1]
+    zs_out[:, i]=cld_xyz[:, 2]
+    dip_out[:, i]=cld_sf[:, idip6]
+    erosion_out[:, i]=cld_sf[:, im3c2]  
+    erosion_unc_out[:, i]=cld_sf[:, im3c2_unc]  
+    erosion_sig_out[:, i]=cld_sf[:, im3c2_sig]  
+
+np.savez('F:/nz_data/m3c2_resultarrays_out.npz', xs_out=xs_out, ys_out=ys_out, zs_out=zs_out, dip_out=dip_out, class_from_2009_out=class_from_2009_out, erosion_out=erosion_out)
+#%% splitting into boxes - should probably figure out how to 
+#each row represents the x coordinates (or y coordinates) of the two points that difine each line dividing up the dataset
+viridis = mpl.colormaps['viridis'].resampled(len(y_forl[:, 0])+1)#cm.get_cmap('bone', len(m3files)+1)
+
+x_forl=np.zeros((11, 2))
+x_forl[0, :]=[774.4, 951.8]
+x_forl[1, :]=[ 768, 964.6]
+x_forl[2, :]=[ 810.1, 959.7]
+x_forl[3, :]=[ 816.1, 957.6]
+x_forl[4, :]=[ 819.9, 970.5]
+x_forl[5, :]=[850.745, 981.1]
+x_forl[6, :]=[ 858.7, 995.2]
+x_forl[7, :]=[ 879.4, 1010.9]
+x_forl[8, :]=[ 904.6, 1018.6]
+x_forl[9, :]=[ 926.3, 1039.39]
+x_forl[10, :]=[953.49, 1054.92]
+
+y_forl=np.zeros((11, 2))
+
+y_forl[0, :]=[694.9, 797.2]
+y_forl[1, :]=[664.2, 780.1]
+y_forl[2, :]=[663.9, 751.4]
+y_forl[3, :]=[641.3, 726.0]
+y_forl[4, :]=[615.8, 708.6]
+y_forl[5, :]=[605.2, 694.4]
+y_forl[6, :]=[587.5, 676.2]
+y_forl[7, :]=[574.3, 662.1]
+y_forl[8, :]=[560.5, 646.6]
+y_forl[9, :]=[534.692, 640.173]
+y_forl[10, :]=[517.8, 623.4]
+
+
+erosion_out[erosion_sig_out==False]=np.nan
+erosion_in[erosion_sig_in==False]=np.nan
+
+m3bbout=np.empty((10,len(m3files)))*np.nan #records the average m3c2 value for each slice on the outer bank, at the water level (below 286.5 m)
+m3bbin=np.empty((10,len(m3files)))*np.nan #same for the inner bank
+
+slopel=np.empty((len(y_forl[:, 0])))*np.nan
+inter=np.empty((len(y_forl[:, 0])))*np.nan
+
+
+    
+    
+for i in range(0, len(x_forl[:, 0])):
+    slopel[i]=(y_forl[i, 1]-y_forl[i,0])/(x_forl[i,1]-x_forl[i,0])
+    inter[i]=(-slopel[i]*x_forl[i,0])+y_forl[i,0]
+
+for j in range(0, len(m3files)):
+    for i in range(0, len(x_forl[:, 0])-1):
+    
+    #first in
+        maskline1_in=ys_in[:, j]<(slopel[i]*xs_in[:, j] +inter[i])
+        maskline2_in=ys_in[:, j]>(slopel[i+1]*xs_in[:, j] +inter[i+1])
+    
+        maskbox_in=np.logical_and(maskline1_in, maskline2_in)
+        maskelev_in=zs_in[:, j]<286.5
+        m3bbin[i, j]=np.nanmean(erosion_in[np.logical_and(maskbox_in, maskelev_in), j])
+        #now out
+        maskline1_out=ys_out[:, j]<(slopel[i]*xs_out[:, j] +inter[i])
+        maskline2_out=ys_out[:, j]>(slopel[i+1]*xs_out[:, j] +inter[i+1])
+        maskbox_out=np.logical_and(maskline1_out, maskline2_out)
+        maskelev_out=zs_out[:, j]<286.5
+        m3bbout[i, j]=np.nanmean(erosion_out[np.logical_and(maskbox_out, maskelev_out), j])
+#%%
+fig, (ax1) = plt.subplots( figsize=(10, 6))
+for i in range(0, len(y_forl[:, 0])):
+    xy=[x_forl[i, 0], y_forl[i, 0]]
+    #ax1.plot(x_forl[i, :], y_forl[i, :], label=i)
+    ax1.axline((x_forl[i, 0], y_forl[i, 0]), slope=slopel[i], color=viridis(i/(len(y_forl[:, 0])+1)), label=i)
+    
+    ax1.plot(x_forl[i, 0], y_forl[i, 0], 'o')
+    ax1.plot(x_forl[i, 1], y_forl[i, 1], 'o')
+
+ax1.legend()
+    
+#%% making figures - m3c2 on inner and outer bend
+contraction=-(m3bbin+m3bbout)
+migration=(m3bbin-m3bbout)/2
+
+fig, (ax1, ax2, ax3, ax4, ax5)=plt.subplots(5, 1, figsize=(10, 20), layout='tight')
+ax1.plot(np.arange(1,11),m3bbin[:, 0], '-o', label='inner bend m3c2 average')
+ax1.plot(np.arange(1,11),m3bbout[:, 0], '--o', label='outer bend m3c2 average')
+ax1.plot(np.arange(1,11),contraction[:, 0], ':o', label='Total change in width from m3c2')
+ax1.plot(np.arange(1,11),migration[:, 0], '-o', label='Channel migration towards outer bank')
+
+
+ax1.set_xlabel('Progress downstream')
+ax1.set_ylabel('Distance (m)')
+#ax1.set_ylim([-1, 0.4])
+ax1.set_title(legends[0])
+ax1.axhline(0)
+ax1.legend()
+
+ax2.plot(np.arange(1,11),m3bbin[:, 1], '-o')
+ax2.plot(np.arange(1,11),m3bbout[:, 1], '--o')
+ax2.plot(np.arange(1,11),contraction[:, 1], ':o')
+ax2.plot(np.arange(1,11),migration[:, 1], '-o')
+
+
+ax2.set_xlabel('Progress downstream')
+ax2.set_ylabel('Distance (m)')
+#ax1.set_ylim([-1, 0.4])
+ax2.set_title(legends[1])
+ax2.axhline(0)
+
+
+ax3.plot(np.arange(1,11),m3bbin[:, 2], '-o')
+ax3.plot(np.arange(1,11),m3bbout[:, 2], '--o')
+ax3.plot(np.arange(1,11),contraction[:, 2], ':o')
+ax3.plot(np.arange(1,11),migration[:, 2], '-o')
+
+
+ax3.set_xlabel('Progress downstream')
+ax3.set_ylabel('Distance (m)')
+#ax1.set_ylim([-1, 0.4])
+ax3.set_title(legends[2])
+ax3.axhline(0)
+
+
+ax4.plot(np.arange(1,11),m3bbin[:, 3], '-o')
+ax4.plot(np.arange(1,11),m3bbout[:, 3], '--o')
+ax4.plot(np.arange(1,11),contraction[:, 3], ':o')
+ax4.plot(np.arange(1,11),migration[:, 3], '-o')
+
+
+ax4.set_xlabel('Progress downstream')
+ax4.set_ylabel('Distance (m)')
+#ax1.set_ylim([-1, 0.4])
+ax4.set_title(legends[3])
+ax4.axhline(0)
+
+ax5.plot(np.arange(1,11),m3bbin[:, 4], '-o')
+ax5.plot(np.arange(1,11),m3bbout[:, 4], '--o')
+ax5.plot(np.arange(1,11),contraction[:, 4], ':o')
+ax5.plot(np.arange(1,11),migration[:, 4], '-o')
+
+
+ax5.set_xlabel('Progress downstream')
+ax5.set_ylabel('Distance (m)')
+#ax1.set_ylim([-1, 0.4])
+ax5.set_title(legends[4])
+ax5.axhline(0)
+#ax5.set_ylim([-1, 0.4])
+
+
+#%% making figures - centerline migration towards the outer bend
+migration=(m3bbin-m3bbout)/2
+fig, (ax1, ax2, ax3, ax4, ax5)=plt.subplots(5, 1, figsize=(10, 20), layout='tight')
+
+ax1.plot(np.arange(1,11),migration[:, 0], '-o', label='Channel migration towards outer bank')
+
+
+ax1.set_xlabel('Progress downstream')
+ax1.set_ylabel('Channel migration towards outer bank (m)')
+#ax1.set_ylim([-1, 0.4])
+ax1.set_title(legends[0])
+ax1.axhline(0)
+ax1.legend()
+
+ax2.plot(np.arange(1,11),migration[:, 1], '-o')
+
+
+ax2.set_xlabel('Progress downstream')
+ax2.set_ylabel('Channel migration towards outer bank (m)')
+#ax1.set_ylim([-1, 0.4])
+ax2.set_title(legends[1])
+ax2.axhline(0)
+
+
+ax3.plot(np.arange(1,11),migration[:, 2], '-o')
+
+
+ax3.set_xlabel('Progress downstream')
+ax3.set_ylabel('Channel migration towards outer bank (m)')
+#ax1.set_ylim([-1, 0.4])
+ax3.set_title(legends[2])
+ax3.axhline(0)
+
+
+ax4.plot(np.arange(1,11),migration[:, 3], '-o')
+
+ax4.set_xlabel('Progress downstream')
+ax4.set_ylabel('Channel migration towards outer bank (m)')
+#ax1.set_ylim([-1, 0.4])
+ax4.set_title(legends[3])
+ax4.axhline(0)
+
+ax5.plot(np.arange(1,11),migration[:, 4], '-o')
+
+
+ax5.set_xlabel('Progress downstream')
+ax5.set_ylabel('Channel migration towards outer bank (m)')
+#ax1.set_ylim([-1, 0.4])
+ax5.set_title(legends[4])
+ax5.axhline(0)
+#ax5.set_ylim([-1, 0.4])
 #%% Select only the soil/cliff parts,
 cfiles=np.load('F:/nz_data/classified_file_names.npy')
 nonveg_files=np.array([])
